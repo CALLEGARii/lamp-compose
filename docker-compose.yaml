@@ -1,0 +1,76 @@
+services:
+  php:
+    build:
+      context: ./php #Indica aonde está o Dockerfile
+      dockerfile: Dockerfile
+
+    container_name: callegari-ifsp-php # apelido para o container
+    restart: always
+    volumes:
+      - ./php:/var/www/html # Irá mapear a pasta do php para o container
+    network:
+      - lamp-network
+    ports:
+      #Mapear as portas para ficarem visiveis fora do container
+      - "80:80"
+    links:
+      - mysql # linka o container do php com o do mysql
+      - postgres # linka o container do php com o do postgres
+
+postgres:
+    image: postgres:12 # imagem do postgres
+    container_name: callegari-ifsp-postgres # apelido para o container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres # usuário do banco de dados
+      POSTGRES_PASSWORD: postdba # senha do banco de dados
+    ports:
+      - "5432:5432" # porta do postgres
+    volumes:
+      - ./postgres:/var/lib/postgresql/data # Irá mapear a pasta do postgres para o container
+    network:
+      - lamp-network
+
+pgadmin:
+    image: dpage/pgadmin4 # imagem do pgAdmin
+    container_name: callegari-ifsp-pgadmin # apelido para o container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: postgres@servidor.com
+      PGADMIN_DEFAULT_PASSWORD: postdba
+    ports:
+      - "8081:80" # porta do pgAdmin
+    depends_on:
+      - postgres # depende do container do postgres
+    networks:
+     - lamp-network
+     
+phpmyadmin: # Serviço do phpMyAdmin
+  build:
+    context: ./phpmyadmin # Indica aonde está o Dockerfile
+    dockerfile: Dockerfile
+
+  container_name: callegari-ifsp-phpmyadmin
+  restart: always
+  volumes:
+    - /sessions
+  ports:
+    - "8080:80" # Mapeia a porta 8080 do host para a porta 80 do container
+  links:
+    - mysql
+  environment:
+    PMA_ARBITRARY: 0 # Desabilita o acesso arbitrário
+    PMA_HOST: mysql
+  networks:
+    - lamp-network # Serviço do MySQL
+
+networks:
+  lamp-network:
+    driver: bridge
+
+volumes:
+  postgres:
+  mysql:
+  web:
+    driver: local    
+
+
